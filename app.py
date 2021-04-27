@@ -1,5 +1,6 @@
 # Импортируем библиотеки
 from tkinter import *
+from tkinter import ttk
 import pymongo
 from pymongo import MongoClient
 import dns
@@ -16,13 +17,42 @@ win.geometry('312x348')
 win['bg'] = '#E8FFDA'
 win.resizable(width=False, height=False)
 
+# Создание скроллбара
+main_frame = Frame(win,bg = '#E8FFDA') # Создание мэйнфрейма
+main_frame.pack(fill=BOTH, expand=1)
+
+# Создание Canvas
+my_canvas = Canvas(main_frame, width = '290', bg = '#E8FFDA')
+my_canvas.pack(side=LEFT, fill=BOTH, expand=TRUE)
+
+# Добавление скроллбара в Canvas
+my_scrollbar = ttk.Scrollbar(main_frame, orient=VERTICAL, command=my_canvas.yview)
+my_scrollbar.pack(side=RIGHT, fill=Y)
+
+# Конфигурация Canvas
+my_canvas.configure(yscrollcommand=my_scrollbar.set)
+my_canvas.bind('<Configure>', lambda e: my_canvas.configure(scrollregion = my_canvas.bbox("all")))
+def _on_mouse_wheel(event):
+    my_canvas.yview_scroll(-1 * int((event.delta / 120)), "units")
+
+my_canvas.bind_all("<MouseWheel>", _on_mouse_wheel)
+# Создание 2 фрейма
+second_frame = Frame(my_canvas, bg = '#E8FFDA')
+
+# Создание окна в Canvas
+my_canvas.create_window((0,0), window=second_frame, width = '300', height = '1000')
+
 messages = [] # Массив с уже существующими сообщениями в мессенджере
 length_of_collection = [] # Длина массива с документами, содержащимися в коллекции в БД
 
+# Поле сообщений
+message_area = Frame(second_frame, bg = '#E8FFDA')
+message_area.place(relwidth=1, relheight = 1)
+
 # Начальный вывод сообщений
 for message in collection.find({}):
-		messages.append(Label(win, bg  = '#E8FFDA',text = (message['name'] + ' ' + message['time'])).pack())
-		messages.append(Label(win, bg  = '#E8FFDA',text = message['text']).pack())
+		messages.append(Label(message_area, bg = '#E8FFDA', text = (message['name'] + ' ' + message['time'])).pack())
+		messages.append(Label(message_area, bg = '#E8FFDA', text = message['text']).pack())
 
 # Функция, считающая длину массива с документами и её вызов
 def count_docs():
@@ -35,12 +65,11 @@ def count_docs():
 def upd_messages():
 	message = list(collection.find().sort('time',-1).limit(1))
 	if len(messages) < count_docs()*2:
-		messages.append(Label(win, bg  = '#E8FFDA',text = (name + ' ' + message[0]['time'])).pack())
-		messages.append(Label(win, bg  = '#E8FFDA',text = message[0]['text']).pack())
+		messages.append(Label(message_area, bg  = '#E8FFDA',text = (name + ' ' + message[0]['time'])).pack())
+		messages.append(Label(message_area, bg  = '#E8FFDA',text = message[0]['text']).pack())
 
 	win.after(5000, upd_messages)
 upd_messages()
-
 
 # Функция, вставляющая сообщение в базу данных и обратно из базы данных в Label
 def send_message():
@@ -51,8 +80,8 @@ def send_message():
 		'text':e_input.get()
 		})
 	last_message = collection.find_one({'text':e_input.get()})
-	messages.append(Label(win, bg  = '#E8FFDA',text = (name + ' ' + last_message['time'])).pack())
-	messages.append(Label(win, bg  = '#E8FFDA',text = last_message['text']).pack())
+	messages.append(Label(message_area, bg  = '#E8FFDA',text = (name + ' ' + last_message['time'])).pack())
+	messages.append(Label(message_area, bg  = '#E8FFDA',text = last_message['text']).pack())
 
 # Функция, регистрирующая имя пользователя и закрывающая приветственное окно
 def name_reg():
@@ -61,19 +90,22 @@ def name_reg():
 		name = e_enter.get()
 		start_win.destroy()
 
+# Поле ввода и отправки
+input_send = Frame(win, bg = 'green')
+input_send.place(relwidth=1, relheight = 0.1, relx = 0, rely = 0.9)
 # Ввод сообщения
-e_input = Entry(win,
+e_input = Entry(input_send,
 				bg = 'white',
 				border = 1,
 				font = ('Roboto',10))
 
 e_input.place(relx = 0.02,
-                             rely = 0.9,
-                             relheight = 0.08, 
+                             rely = 0.1,
+                             relheight = 0.8, 
                              relwidth = 0.7)
 
 # Кнопка
-b_send = Button(win,
+b_send = Button(input_send,
 				text = 'Отправить',
 				bg = 'white',
 				font = ('Roboto',10),
@@ -81,13 +113,9 @@ b_send = Button(win,
 				command = send_message)
 
 b_send.place(relx = 0.75,
-            rely = 0.9,
-            relheight = 0.07, 
+            rely = 0.1,
+            relheight = 0.8, 
             relwidth = 0.22)
-
-# Поле сообщений
-l_message = Label(win, bg  = '#E8FFDA')
-l_message.place(relx = 0.02, rely = 0.03)
 
 # Поле ввода имени
 start_win = Frame(win) #Фрейм, на котором будет вводиться имя
@@ -106,6 +134,5 @@ b_enter.place(relx = 0.7,
 			relheight = 0.07, 
             relwidth = 0.2)
 
-###############################
 
 win.mainloop()
