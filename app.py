@@ -1,15 +1,9 @@
 # Импортируем библиотеки
 from tkinter import *
 from tkinter import ttk
-import pymongo
-from pymongo import MongoClient
-import dns
 from datetime import datetime
+from mongologin import * # Коннект с MongoDB
 
-# Подключение и настройка MongoDB
-client = pymongo.MongoClient("mongodb+srv://Dmitry:PyeWxW4ulFZr7M7M@messages.f8s3p.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
-db = client.Messages
-collection = db.Messages
 # Настройка окна
 win = Tk()
 win.title('Touch chat')
